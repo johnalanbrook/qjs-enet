@@ -324,20 +324,27 @@ static const JSCFunctionListEntry js_enet_peer_funcs[] = {
     JS_CFUNC_DEF("timeout", 3, js_enet_peer_timeout),
 };
 
+JSValue js_enet_use(JSContext *js)
+{
+  JS_NewClassID(&enet_host_id);
+  JS_NewClass(JS_GetRuntime(ctx), enet_host_id, &enet_host);
+  JSValue host_proto = JS_NewObject(ctx);
+  JS_SetPropertyFunctionList(ctx, host_proto, js_enet_host_funcs, countof(js_enet_host_funcs));
+  JS_SetClassProto(ctx, enet_host_id, host_proto);
+
+  JS_NewClassID(&enet_peer_class_id);
+  JS_NewClass(JS_GetRuntime(ctx), enet_peer_class_id, &enet_peer_class);
+  JSValue peer_proto = JS_NewObject(ctx);
+  JS_SetPropertyFunctionList(ctx, peer_proto, js_enet_peer_funcs, countof(js_enet_peer_funcs));
+  JS_SetClassProto(ctx, enet_peer_class_id, peer_proto);
+
+  JSValue export = JS_NewObject(js);
+  JS_SetPropertyFunctionList(js, export, js_enet_funcs, sizeof(js_enet_funcs)/sizeof(JSCFunctionListEntry));
+  return export;
+}
+
 static int js_enet_init(JSContext *ctx, JSModuleDef *m) {
-    JS_NewClassID(&enet_host_id);
-    JS_NewClass(JS_GetRuntime(ctx), enet_host_id, &enet_host);
-    JSValue host_proto = JS_NewObject(ctx);
-    JS_SetPropertyFunctionList(ctx, host_proto, js_enet_host_funcs, countof(js_enet_host_funcs));
-    JS_SetClassProto(ctx, enet_host_id, host_proto);
-
-    JS_NewClassID(&enet_peer_class_id);
-    JS_NewClass(JS_GetRuntime(ctx), enet_peer_class_id, &enet_peer_class);
-    JSValue peer_proto = JS_NewObject(ctx);
-    JS_SetPropertyFunctionList(ctx, peer_proto, js_enet_peer_funcs, countof(js_enet_peer_funcs));
-    JS_SetClassProto(ctx, enet_peer_class_id, peer_proto);
-
-    return JS_SetModuleExportList(ctx, m, js_enet_funcs, countof(js_enet_funcs));
+  return JS_SetModuleExport(ctx, m, "default", js_enet_use(ctx));
 }
 
 #ifdef JS_SHARED_LIBRARY
@@ -350,6 +357,6 @@ JSModuleDef *JS_INIT_MODULE(JSContext *ctx, const char *module_name) {
     JSModuleDef *m = JS_NewCModule(ctx, module_name, js_enet_init);
     if (!m)
         return NULL;
-    JS_AddModuleExportList(ctx, m, js_enet_funcs, countof(js_enet_funcs));
+    JS_AddModuleExport(ctx, m, "default");
     return m;
 }
