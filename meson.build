@@ -9,5 +9,5 @@ qjs_enet_lib = library('enet',
 )
 
 qjs_enet_dep = declare_dependency(
-  link_with: enet_lib,
+  link_with: qjs_enet_lib,
 )
